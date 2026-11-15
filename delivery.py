@@ -13,23 +13,25 @@ st.set_page_config(
 
 
 def set_korean_font():
-    """운영체제별 한글 폰트 자동 설정"""
+    """운영체제별 및 Streamlit Cloud(Linux) 환경 한글 폰트 설정"""
     system = platform.system()
     if system == "Windows":
         plt.rcParams["font.family"] = "Malgun Gothic"
     elif system == "Darwin":  # macOS
         plt.rcParams["font.family"] = "AppleGothic"
-    else:  # Linux (Streamlit Cloud 등)
-        # 나눔고딕 폰트가 설치되어 있는 경우 적용
-        font_list = [f.name for f in fm.fontManager.ttflist]
-        if "NanumGothic" in font_list:
-            plt.rcParams["font.family"] = "NanumGothic"
+    else:  # Linux / Streamlit Cloud
+        try:
+            # Streamlit Cloud에 설치된 나눔고딕 경로를 직접 지정
+            font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+            font_name = fm.FontProperties(fname=font_path).get_name()
+            plt.rcParams["font.family"] = font_name
+        except Exception:
+            pass
 
     plt.rcParams["axes.unicode_minus"] = False
 
 
 set_korean_font()
-
 
 # ==========================================
 # 1. 수학적 계산 함수
@@ -46,7 +48,6 @@ def speed_change(t, v0, vmin, k):
 
 def distance(t, v0, vmin, k):
     """정적분을 이용한 누적 이동 거리 (km)"""
-    # 기존 코드의 수식 오타(- 위치, 1 - np.exp) 수정
     return (vmin * t + (v0 - vmin) / k * (1 - np.exp(-k * t))) / 60
 
 
@@ -55,7 +56,6 @@ def find_arrival_time(v0, vmin, k, D):
     low = 0.0
     high = 1.0
 
-    # vmin이 양수이므로 이동 거리는 계속 증가한다.
     while distance(high, v0, vmin, k) < D:
         high *= 2
         if high > 1_000_000:
@@ -124,7 +124,6 @@ run_calculation = st.sidebar.button(
     "📊 예측 및 그래프 생성", type="primary", use_container_width=True
 )
 
-# 첫 화면에서도 기본값으로 계산 결과 표시
 if "has_calculated" not in st.session_state:
     st.session_state.has_calculated = True
 
